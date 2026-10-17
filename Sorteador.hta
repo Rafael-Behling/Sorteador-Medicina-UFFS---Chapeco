@@ -1,0 +1,923 @@
+﻿<html xmlns:hta="urn:schemas-microsoft-com:hta">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>CampeANATO - Sorteador</title>
+<hta:application
+  id="oHTA"
+  applicationname="CampeANATOSorteador"
+  border="thin"
+  caption="yes"
+  maximizebutton="yes"
+  minimizebutton="yes"
+  scroll="no"
+  showintaskbar="yes"
+  windowstate="normal"
+  singleinstance="yes"
+  contextmenu="no"
+  selection="no"
+  innerborder="no"
+  sysmenu="yes"
+/>
+<style>
+* { box-sizing: border-box; }
+html, body {
+  margin:0; padding:0; width:100%; height:100%; overflow:hidden;
+  background:#0b1220; color:#ffffff;
+  font-family:'Segoe UI', Tahoma, sans-serif;
+  cursor:pointer;
+  -ms-user-select:none; user-select:none;
+  -ms-touch-action:none;
+}
+body {
+  background-repeat:no-repeat; background-position:center center;
+  background-size:cover; background-attachment:fixed;
+}
+#veil { position:absolute; left:0; top:0; width:100%; height:100%;
+  background:rgba(4,10,25,0.58); z-index:1; }
+#hud { position:absolute; left:0; top:0; width:100%; z-index:5;
+  padding:12px 20px; text-align:left; }
+#hud .brand { font-size:17px; letter-spacing:2px; font-weight:700;
+  text-shadow:0 2px 10px #000; opacity:.92; }
+#hud #hudCount { font-size:13px; opacity:.75; letter-spacing:1px; margin-left:12px; }
+#hud .right { position:absolute; right:14px; top:9px; }
+.btn { display:inline-block; cursor:pointer; border:none; color:#fff;
+  font-family:inherit; font-weight:700; letter-spacing:1px;
+  background:linear-gradient(#2a7de1,#0b4ea0); border-radius:10px;
+  padding:11px 20px; margin:0 5px; font-size:16px; vertical-align:middle;
+  box-shadow:0 6px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn:hover { background:linear-gradient(#3b8ef0,#0c5cb8); }
+.btn.small { font-size:12px; padding:8px 13px; border-radius:8px; }
+.btn.ghost { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35); box-shadow:none; }
+.btn.ghost:hover { background:rgba(255,255,255,.24); }
+.btn.disabled { opacity:.45; box-shadow:none; }
+#hint { position:absolute; left:50%; bottom:24px; z-index:6;
+  transform:translateX(-50%); -ms-transform:translateX(-50%);
+  background:rgba(0,0,0,.62); color:#fff; padding:9px 18px; border-radius:22px;
+  font-size:14px; letter-spacing:1px; opacity:0; white-space:nowrap;
+  transition:opacity .35s; -ms-transition:opacity .35s; }
+#hint.show { opacity:1; }
+.screen { position:absolute; left:50%; top:50%; text-align:center; z-index:3;
+  width:95%;
+  transform:translate(-50%,-50%); -ms-transform:translate(-50%,-50%); }
+.hidden { display:none; }
+h1.title { font-size:52px; margin:0 0 8px; letter-spacing:8px; font-weight:800;
+  text-shadow:0 4px 26px rgba(0,0,0,.8); }
+.sub { font-size:18px; opacity:.9; margin-bottom:30px; letter-spacing:3px; }
+.bigbtn { display:inline-block; font-size:28px; padding:20px 62px; border-radius:16px; }
+.count { font-size:15px; opacity:.8; margin-top:18px; letter-spacing:1px; min-height:20px; }
+.done { color:#ffd34d; font-weight:700; opacity:1; }
+
+.reels { display:table; width:100%; table-layout:fixed; }
+.reelbox { display:table-cell; width:50%; vertical-align:top; padding:0 16px; text-align:center; }
+.reeltitle { font-size:15px; letter-spacing:5px; opacity:.85; margin-bottom:10px; text-transform:uppercase; }
+.reel { position:relative; height:52vh; overflow:hidden; border-radius:16px;
+  background:rgba(0,0,0,.38); border:2px solid rgba(255,255,255,.28);
+  box-shadow:0 10px 34px rgba(0,0,0,.55); }
+.reel:after { content:""; position:absolute; left:0; top:0; width:100%; height:100%;
+  pointer-events:none;
+  background:linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 78%, rgba(0,0,0,.45)); }
+.strip { position:absolute; left:0; top:0; width:100%; }
+.cell { width:100%; overflow:hidden; background-repeat:no-repeat;
+  background-position:center center; background-size:contain; }
+.cap { font-size:28px; font-weight:800; margin-top:14px; letter-spacing:1px;
+  min-height:36px; text-shadow:0 3px 18px rgba(0,0,0,.85); }
+.cap.in { animation: dropIn .6s cubic-bezier(.18,.9,.32,1.35) both; }
+@keyframes dropIn {
+  0%   { opacity:0; transform: translateY(-70px) scale(.6); }
+  55%  { opacity:1; transform: translateY(8px) scale(1.06); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
+}
+.controls { margin-top:26px; text-align:center; }
+
+/* ---------- Grupos / Ranking ---------- */
+#scr-results { max-height:94vh; overflow:auto; }
+.panel { text-align:center; }
+.ptitle { font-size:34px; font-weight:800; letter-spacing:4px; margin:0 0 16px;
+  text-shadow:0 4px 22px rgba(0,0,0,.8); }
+.setupline { margin:10px 0; font-size:16px; }
+.setupline label { opacity:.85; margin-right:8px; letter-spacing:1px; }
+.inp { background:rgba(0,0,0,.45); border:2px solid rgba(255,255,255,.30); color:#fff;
+  border-radius:9px; padding:9px 13px; font-size:16px; font-family:inherit;
+  cursor:text; -ms-user-select:text; user-select:text; }
+.inp:focus { outline:none; border-color:#2a7de1; }
+.inp.small { width:90px; text-align:center; }
+.gname { width:92%; }
+.glista { margin:16px auto; max-width:860px; }
+.grow { display:table; width:100%; table-layout:fixed;
+  background:rgba(0,0,0,.38); border:2px solid rgba(255,255,255,.14);
+  border-radius:12px; margin:8px 0; padding:8px 12px; }
+.gpos { display:table-cell; width:58px; vertical-align:middle; text-align:center;
+  font-size:22px; font-weight:800; color:#9fd0ff; }
+.gnome { display:table-cell; vertical-align:middle; text-align:left;
+  font-size:20px; padding:0 12px; overflow:hidden; }
+.gpts { display:table-cell; width:110px; vertical-align:middle; text-align:right;
+  font-size:26px; font-weight:800; color:#ffd34d; padding:0 12px; }
+.gctrl { display:table-cell; width:250px; vertical-align:middle; text-align:right; white-space:nowrap; }
+.empty { opacity:.7; font-size:16px; padding:22px; }
+.r1 { background:linear-gradient(90deg, rgba(255,196,0,.30), rgba(0,0,0,.30)); border-color:rgba(255,196,0,.55); }
+.r2 { background:linear-gradient(90deg, rgba(192,192,192,.26), rgba(0,0,0,.30)); border-color:rgba(200,200,200,.5); }
+.r3 { background:linear-gradient(90deg, rgba(205,127,50,.26), rgba(0,0,0,.30)); border-color:rgba(205,127,50,.5); }
+.podio { display:table; width:100%; max-width:760px; margin:18px auto 6px; table-layout:fixed; }
+.pod { display:table-cell; width:33.33%; vertical-align:bottom; text-align:center; padding:0 8px; }
+.podname { font-size:20px; font-weight:800; min-height:30px; margin-bottom:8px;
+  text-shadow:0 3px 14px #000; }
+.podbox { border-radius:14px 14px 0 0; display:block; padding-top:14px;
+  border:2px solid rgba(255,255,255,.35); border-bottom:none; }
+.podbox.p1 { background:linear-gradient(#caa62b,#8a6d10); }
+.podbox.p2 { background:linear-gradient(#b9bcc4,#777b85); }
+.podbox.p3 { background:linear-gradient(#c07f36,#7f4f1c); }
+.podmedal { font-size:34px; font-weight:800; text-shadow:0 2px 8px rgba(0,0,0,.6); }
+.podpts { font-size:22px; font-weight:700; margin-top:4px; }
+.msg { font-size:22px; margin:18px 0; font-weight:600; text-shadow:0 3px 16px #000; }
+
+/* ---------- AnimaÃ§Ãµes de revelaÃ§Ã£o ---------- */
+.revealmsg { font-size:30px; font-weight:800; letter-spacing:3px; min-height:44px;
+  margin:2px 0 8px; color:#ffd34d; text-shadow:0 4px 22px rgba(0,0,0,.85); }
+.rvel { opacity:0; }
+.rvel.in { opacity:1; animation: podIn .7s cubic-bezier(.18,.9,.32,1.35) both; }
+.fade { opacity:0; }
+.fade.in { opacity:1; animation: fadeIn .55s ease both; }
+@keyframes podIn {
+  0%   { opacity:0; transform: translateY(45px) scale(.70); }
+  60%  { opacity:1; transform: translateY(-8px) scale(1.06); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.podbox.p1 { transition: box-shadow .6s ease; }
+.podbox.p1.champ { box-shadow:0 0 42px 10px rgba(255,196,0,.80); }
+.podbox.p1.champ .podmedal { animation: champPulse 1.2s ease-in-out infinite; }
+@keyframes champPulse {
+  0%,100% { transform: scale(1);    text-shadow:0 2px 8px rgba(0,0,0,.6); }
+  50%     { transform: scale(1.22); text-shadow:0 0 18px rgba(255,255,120,.95); }
+}
+</style>
+</head>
+<body>
+
+<div id="veil"></div>
+
+<div id="hud">
+  <span class="brand">CAMPEANATO &bull; SORTEADOR</span>
+  <span id="hudCount"></span>
+  <span class="right">
+    <span class="btn small ghost" id="btnSom" title="Ligar/desligar todos os sons">Som: ON</span>
+    <span class="btn small" id="btnFinalizar">Finalizar</span>
+    <span class="btn small ghost" id="btnPainel">Painel</span>
+    <span class="btn small ghost" id="btnAtalho">Criar atalho</span>
+    <span class="btn small ghost" id="btnReset">Reiniciar</span>
+    <span class="btn small ghost" id="btnSair">Sair</span>
+  </span>
+</div>
+<div id="hint"></div>
+
+<div class="screen" id="scr-board">
+  <div class="reels">
+    <div class="reelbox">
+      <div class="reeltitle">Tema</div>
+      <div class="reel" id="reelTema"><div class="strip" id="stripTema"></div></div>
+      <div class="cap" id="capTema">&nbsp;</div>
+    </div>
+    <div class="reelbox">
+      <div class="reeltitle">N&uacute;mero da pergunta</div>
+      <div class="reel" id="reelNum"><div class="strip" id="stripNum"></div></div>
+      <div class="cap" id="capNum">&nbsp;</div>
+    </div>
+  </div>
+  <div class="controls">
+    <span class="btn bigbtn" id="btnSortear">SORTEAR</span>
+    <div class="count" id="startCount"></div>
+  </div>
+</div>
+
+<div class="screen hidden" id="scr-config">
+  <h1 class="title">CONFIGURAR</h1>
+  <div class="sub" id="configMsg"></div>
+</div>
+
+<div class="screen hidden" id="scr-results">
+  <div class="ptitle">RESULTADO FINAL</div>
+  <div class="revealmsg" id="revealMsg">&nbsp;</div>
+  <div id="podio" class="podio"></div>
+  <div id="resultadoLista" class="glista fade"></div>
+  <div class="msg fade" id="msgFinal"></div>
+  <div class="setupline">
+    <span class="btn ghost" onclick="replayReveal()">Repetir anima&ccedil;&atilde;o</span>
+    <span class="btn ghost" onclick="voltarBoard()">Voltar ao jogo</span>
+  </div>
+</div>
+
+<script language="JScript">
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+var base = "C:\\Users\\Rafael\\Documents\\MED";
+
+function deriveBase(){
+  try {
+    var p = location.href.replace(/^file:\/\/\//i, "").replace(/\//g, "\\");
+    p = decodeURIComponent(p);
+    if (fso.FileExists(p)) return fso.GetParentFolderName(p);
+  } catch (e) {}
+  return base;
+}
+
+function fileUrl(p){
+  return "file:///" + p.replace(/\\/g, "/").replace(/#/g, "%23").replace(/\?/g, "%3F").replace(/ /g, "%20");
+}
+
+base = deriveBase();
+
+window.onerror = function(msg, url, line){
+  try {
+    var f = fso.OpenTextFile(base + "\\_erros.log", 8, true);
+    f.WriteLine((new Date()) + " | " + msg + " | linha " + line + " | " + url);
+    f.Close();
+  } catch (e) {}
+  return true;
+};
+
+var TIPOS = [], NUMEROS = [], FUNDO = [], nomes = [];
+var drawn = [], remaining = [], current = null;
+var spinning = false;
+var somMudo = false;
+var reels = {
+  tema: { el: null, strip: null, N: 0, H: 0, last: null },
+  num:  { el: null, strip: null, N: 0, H: 0, last: null }
+};
+
+function natCmp(a, b){
+  var ax = String(a).match(/(\d+)|(\D+)/g) || [];
+  var bx = String(b).match(/(\d+)|(\D+)/g) || [];
+  var n = Math.max(ax.length, bx.length);
+  for (var i = 0; i < n; i++){
+    var A = ax[i] || "", B = bx[i] || "";
+    var an = /^\d+$/.test(A), bn = /^\d+$/.test(B);
+    if (an && bn){ if (parseInt(A,10) !== parseInt(B,10)) return parseInt(A,10) - parseInt(B,10); }
+    else {
+      var al = A.toLowerCase(), bl = B.toLowerCase();
+      if (al < bl) return -1;
+      if (al > bl) return 1;
+      if (A < B) return -1;
+      if (A > B) return 1;
+    }
+  }
+  return 0;
+}
+
+function listImages(fp){
+  var a = [];
+  try {
+    if (!fso.FolderExists(fp)) return a;
+    var e = new Enumerator(fso.GetFolder(fp).Files);
+    for (; !e.atEnd(); e.moveNext()){
+      var nm = e.item().Name;
+      var dot = nm.lastIndexOf(".");
+      var ext = dot >= 0 ? nm.substring(dot).toLowerCase() : "";
+      if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".bmp" || ext == ".webp"){
+        a.push({ name: nm, path: e.item().Path, src: fileUrl(e.item().Path) });
+      }
+    }
+    a.sort(function(x, y){ return natCmp(x.name, y.name); });
+  } catch (e2) {}
+  return a;
+}
+
+function findFolder(names){
+  for (var i = 0; i < names.length; i++){
+    var p = base + "\\" + names[i];
+    if (fso.FolderExists(p)) return p;
+  }
+  return base + "\\" + names[0];
+}
+
+function loadNames(n){
+  var arr = [];
+  try {
+    var fp = base + "\\nomes_tipos.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      while (!f.AtEndOfStream){
+        var l = f.ReadLine();
+        l = l.replace(/^\uFEFF/, "");
+        if (l.charAt(0) == "#") continue;
+        l = l.replace(/^\s+|\s+$/g, "");
+        if (l.length) arr.push(l);
+      }
+      f.Close();
+    }
+  } catch (e) {}
+  for (var i = 0; i < n; i++){
+    var derived = "";
+    if (TIPOS[i]){
+      var fn = TIPOS[i].name.replace(/\.[^.]+$/, "");
+      fn = fn.replace(/^[0-9\s_\-\.]+/, "").replace(/[\s_\-\.]+$/, "");
+      derived = fn.replace(/[_\-]+/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+    }
+    if (!arr[i] || !String(arr[i]).length) arr[i] = derived || ("Tema " + (i + 1));
+  }
+  return arr;
+}
+
+function readProgress(){
+  drawn = [];
+  try {
+    var fp = base + "\\progresso.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      while (!f.AtEndOfStream){
+        var m = f.ReadLine().match(/(\d+)\s*,\s*(\d+)/);
+        if (m) drawn.push({ t: parseInt(m[1],10), n: parseInt(m[2],10) });
+      }
+      f.Close();
+    }
+  } catch (e) {}
+  var dd = [];
+  for (var i = 0; i < drawn.length; i++){
+    if (drawn[i].t < TIPOS.length && drawn[i].n < NUMEROS.length) dd.push(drawn[i]);
+  }
+  drawn = dd;
+}
+
+function saveProgress(){
+  try {
+    var f = fso.CreateTextFile(base + "\\progresso.txt", true);
+    for (var i = 0; i < drawn.length; i++) f.WriteLine(drawn[i].t + "," + drawn[i].n);
+    f.Close();
+  } catch (e) {}
+}
+
+function buildRemaining(){
+  var used = {};
+  for (var i = 0; i < drawn.length; i++) used[drawn[i].t + "," + drawn[i].n] = 1;
+  remaining = [];
+  for (var t = 0; t < TIPOS.length; t++){
+    for (var n = 0; n < NUMEROS.length; n++){
+      if (!used[t + "," + n]) remaining.push({ t: t, n: n });
+    }
+  }
+}
+
+function totalPairs(){ return TIPOS.length * NUMEROS.length; }
+
+function updateCount(){
+  var sc = document.getElementById("startCount");
+  var hc = document.getElementById("hudCount");
+  if (hc) hc.innerHTML = "&nbsp;&nbsp;Restam: " + remaining.length;
+  if (!sc) return;
+  sc.className = "count";
+  if (remaining.length == 0){
+    sc.className = "count done";
+    sc.innerHTML = "FIM! Todas as combina\u00E7\u00F5es foram sorteadas. Clique em Reiniciar.";
+  } else {
+    sc.innerHTML = remaining.length + " de " + totalPairs() + " combina\u00E7\u00F5es dispon\u00EDveis";
+  }
+}
+
+function show(id){
+  var ids = ["scr-board", "scr-config", "scr-results"];
+  for (var i = 0; i < ids.length; i++) document.getElementById(ids[i]).className = "screen hidden";
+  document.getElementById(id).className = "screen";
+  currentScreen = id.replace("scr-", "");
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function buildReel(reel, images){
+  var N = images.length;
+  if (!N) return;
+  var H = reel.el.clientHeight || Math.round(window.innerHeight * 0.52);
+  reel.N = N;
+  reel.H = H;
+  var html = "";
+  for (var c = 0; c < 2; c++){
+    for (var i = 0; i < N; i++){
+      html += '<div class="cell" style="height:' + H + 'px;background-image:url(\'' +
+              images[i].src + '\');"></div>';
+    }
+  }
+  reel.strip.innerHTML = html;
+  if (reel.last == null) reel.last = Math.floor(Math.random() * N);
+  reel.last = ((reel.last % N) + N) % N;
+  reel.strip.style.top = (-(reel.last * H)) + "px";
+}
+
+function layoutReels(){
+  if (spinning) return;
+  if (TIPOS.length && reels.tema.el) buildReel(reels.tema, TIPOS);
+  if (NUMEROS.length && reels.num.el) buildReel(reels.num, NUMEROS);
+}
+
+function spinReel(reel, targetIndex, delay, duration, cb){
+  var N = reel.N, H = reel.H, total = N * H;
+  var endPos = 3 * total + targetIndex * H;
+  setTimeout(function(){
+    var start = (new Date()).getTime();
+    var timer = setInterval(function(){
+      var t = ((new Date()).getTime() - start) / duration;
+      if (t > 1) t = 1;
+      var e = 1 - Math.pow(1 - t, 3);
+      var pos = e * endPos;
+      reel.strip.style.top = (-(pos % total)) + "px";
+      if (t >= 1){
+        clearInterval(timer);
+        reel.last = ((targetIndex % N) + N) % N;
+        reel.strip.style.top = (-(reel.last * H)) + "px";
+        if (cb) cb();
+      }
+    }, 16);
+  }, delay);
+}
+
+function startSpin(){
+  if (spinning) return;
+  if (remaining.length == 0){ updateCount(); return; }
+  spinning = true;
+  var r = Math.floor(Math.random() * remaining.length);
+  current = remaining[r];
+  remaining.splice(r, 1);
+  drawn.push(current);
+  saveProgress();
+
+  document.getElementById("btnSortear").className = "btn bigbtn disabled";
+  document.getElementById("capTema").innerHTML = "&nbsp;";
+  document.getElementById("capNum").innerHTML = "&nbsp;";
+  var sc = document.getElementById("startCount");
+  sc.className = "count";
+  sc.innerHTML = "Sorteando...";
+  playSpin();
+
+  var spinMs = 12330;
+  var pending = 2;
+  function fin(){ if (--pending == 0) finishSpin(); }
+  spinReel(reels.tema, current.t, 0, spinMs, fin);
+  spinReel(reels.num, current.n, 220, spinMs - 220, fin);
+}
+
+function dropInEl(el){
+  if (!el) return;
+  el.className = "cap in";
+  if (el._ti) clearTimeout(el._ti);
+  el._ti = setTimeout(function(){ el.className = "cap"; }, 750);
+}
+
+function tocarSom(wavPath, ms){
+  if (loadSom()) return;
+  try {
+    var exe = base + "\\playsound.exe";
+    if (!fso.FileExists(exe)) return;
+    var sh = new ActiveXObject("WScript.Shell");
+    sh.Run('"' + exe + '" "' + wavPath + '" ' + ms + ' 0', 0, false);
+  } catch (e) {}
+}
+
+function setSom(m){
+  somMudo = !!m;
+  var b = document.getElementById("btnSom");
+  if (b){
+    b.innerHTML = somMudo ? "Som: OFF" : "Som: ON";
+    b.style.opacity = somMudo ? "0.55" : "1";
+  }
+  saveSom();
+}
+
+function loadSom(){
+  try {
+    var fp = base + "\\_som_mudo.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      var l = f.AtEndOfStream ? "" : f.ReadLine();
+      f.Close();
+      return l.replace(/\s/g, "") == "1";
+    }
+  } catch (e) {}
+  return false;
+}
+
+function saveSom(){
+  try {
+    var f = fso.CreateTextFile(base + "\\_som_mudo.txt", true);
+    f.WriteLine(somMudo ? "1" : "0");
+    f.Close();
+  } catch (e) {}
+}
+
+function playSpin(){
+  tocarSom(base + "\\SONS\\som da roleta girando.wav", 12330);
+}
+
+function finishSpin(){
+  spinning = false;
+  document.getElementById("capTema").innerHTML = esc(nomes[current.t]);
+  document.getElementById("capNum").innerHTML = "N\u00BA " + (current.n + 1);
+  dropInEl(document.getElementById("capTema"));
+  dropInEl(document.getElementById("capNum"));
+  document.getElementById("btnSortear").className = "btn bigbtn";
+  updateCount();
+}
+
+function resetAll(ask){
+  if (ask && !confirm("Reiniciar todos os sorteios?\nAs combina\u00E7\u00F5es voltam a ficar dispon\u00EDveis.")) return;
+  if (spinning) return;
+  drawn = [];
+  saveProgress();
+  buildRemaining();
+  document.getElementById("capTema").innerHTML = "&nbsp;";
+  document.getElementById("capNum").innerHTML = "&nbsp;";
+  updateCount();
+}
+
+function stop(){ try { window.event.cancelBubble = true; } catch (e) {} }
+
+var hintTimer = null;
+var resizeTimer = null;
+var isFull = false;
+var hudHidden = false;
+
+function showHint(txt){
+  var h = document.getElementById("hint");
+  h.innerHTML = txt;
+  h.className = "show";
+  if (hintTimer) clearTimeout(hintTimer);
+  hintTimer = setTimeout(function(){ h.className = ""; }, 2200);
+}
+
+function setHud(hidden){
+  hudHidden = hidden;
+  document.getElementById("hud").style.display = hidden ? "none" : "block";
+}
+
+function enterFull(){
+  setHud(true);
+  try {
+    var w = window.outerWidth - window.innerWidth;
+    var h = window.outerHeight - window.innerHeight;
+    window.moveTo(-Math.round(w / 2), -(h - Math.round(w / 2)));
+    window.resizeTo(screen.width + w, screen.height + h);
+  } catch (e) {}
+  isFull = true;
+  setTimeout(layoutReels, 80);
+  showHint("TELA CHEIA  \u2022  F11 para sair");
+}
+
+function exitFull(){
+  try { window.moveTo(0, 0); window.resizeTo(screen.availWidth, screen.availHeight); } catch (e) {}
+  setHud(false);
+  isFull = false;
+  setTimeout(layoutReels, 80);
+  showHint("F11 para tela cheia");
+}
+
+function toggleFull(){ if (isFull) { exitFull(); } else { enterFull(); } }
+
+function toggleClean(){
+  setHud(!hudHidden);
+  showHint(hudHidden ? "MODO LIMPO  \u2022  F10 para sair" : "F10 para modo limpo");
+}
+
+/* ===== Grupos (somente leitura) ===== */
+var currentScreen = "board";
+var grupos = [];
+var nextGid = 1;
+var TIEBREAK = null;
+
+function loadGrupos(){
+  grupos = []; nextGid = 1;
+  try {
+    var fp = base + "\\ranking.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      while (!f.AtEndOfStream){
+        var l = f.ReadLine();
+        l = l.replace(/^\uFEFF/, "");
+        if (!l || l.charAt(0) == "#") continue;
+        var i = l.lastIndexOf("|");
+        if (i < 0) continue;
+        var nome = "";
+        try { nome = decodeURIComponent(l.substring(0, i)); } catch (e2) { nome = l.substring(0, i); }
+        var pts = parseInt(l.substring(i + 1), 10);
+        if (isNaN(pts) || pts < 0) pts = 0;
+        if (nome.length) grupos.push({ id: nextGid++, nome: nome, pontos: pts });
+      }
+      f.Close();
+    }
+  } catch (e) {}
+}
+
+function cmpRanking(a, b){
+  if (b.pontos !== a.pontos) return b.pontos - a.pontos;
+  if (TIEBREAK) { var r = TIEBREAK(a, b); if (r) return r; }
+  return a.id - b.id;
+}
+
+function rankingOrdenado(){
+  var c = grupos.slice(0);
+  c.sort(cmpRanking);
+  return c;
+}
+
+function comPosicoes(ord){
+  var res = [], pos = 1;
+  for (var i = 0; i < ord.length; i++){
+    if (i > 0 && ord[i].pontos !== ord[i - 1].pontos) pos = i + 1;
+    res.push({ g: ord[i], pos: pos });
+  }
+  return res;
+}
+
+/* ===== Integracao com o Painel (privado) ===== */
+var lastCmdT = 0;
+
+function readCmd(){
+  try {
+    var fp = base + "\\comando.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      var l = f.AtEndOfStream ? "" : f.ReadLine();
+      f.Close();
+      var p = l.indexOf("|");
+      if (p > 0){
+        var t = parseInt(l.substring(0, p), 10);
+        var c = l.substring(p + 1).replace(/^\s+|\s+$/g, "");
+        if (!isNaN(t) && c.length) return { t: t, cmd: c };
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function handleCmd(cmd){
+  if (cmd == "FINALIZAR") finalizar();
+  else if (cmd == "REVELAR") replayReveal();
+  else if (cmd == "VOLTAR") voltarBoard();
+  else if (cmd == "RESETSORTEIO"){ resetAll(false); if (currentScreen != "board") voltarBoard(); }
+  else if (cmd == "SORTEAR"){ if (currentScreen != "board") voltarBoard(); startSpin(); }
+  else if (cmd == "FULLSCREEN") toggleFull();
+  else if (cmd == "CLEAN") toggleClean();
+}
+
+function pollCmd(){
+  var c = readCmd();
+  if (c && c.t > lastCmdT){ lastCmdT = c.t; handleCmd(c.cmd); }
+}
+
+function panelRunning(){
+  try {
+    var fp = base + "\\_painel.lock";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      var l = f.AtEndOfStream ? "" : f.ReadLine();
+      f.Close();
+      var t = parseInt(l, 10);
+      if (!isNaN(t) && ((new Date()).getTime() - t) < 4000) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function launchPanel(){
+  try {
+    if (panelRunning()) return;
+    var sh = new ActiveXObject("WScript.Shell");
+    var exe = sh.ExpandEnvironmentStrings("%SystemRoot%\\System32\\mshta.exe");
+    sh.Run('"' + exe + '" "' + base + '\\Painel.hta"', 1, false);
+  } catch (e) {}
+}
+
+function loadPos(){
+  try {
+    var fp = base + "\\_pos_sorteador.txt";
+    if (fso.FileExists(fp)){
+      var f = fso.OpenTextFile(fp, 1);
+      var l = f.AtEndOfStream ? "" : f.ReadLine();
+      f.Close();
+      var m = l.match(/(-?\d+)\s*,\s*(-?\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (m) return { x:parseInt(m[1],10), y:parseInt(m[2],10), w:parseInt(m[3],10), h:parseInt(m[4],10) };
+    }
+  } catch (e) {}
+  return null;
+}
+
+function savePos(){
+  try {
+    var f = fso.CreateTextFile(base + "\\_pos_sorteador.txt", true);
+    f.WriteLine(window.screenLeft + "," + window.screenTop + "," + window.outerWidth + "," + window.outerHeight);
+    f.Close();
+  } catch (e) {}
+}
+
+function voltarBoard(){ stop(); clearReveal(); show("scr-board"); }
+
+function finalizar(){
+  stop();
+  loadGrupos();
+  if (grupos.length < 1){ alert("Nenhum grupo cadastrado no painel."); return; }
+  clearReveal();
+  renderResults();
+  show("scr-results");
+  revelarPodio();
+}
+
+function renderResults(){
+  var ord = comPosicoes(rankingOrdenado());
+  var podio = document.getElementById("podio");
+  function podBox(entry, place, h){
+    if (!entry) return '<div class="pod"><div class="podbox" style="height:' + h + 'px; visibility:hidden;"></div></div>';
+    return '<div class="pod">' +
+      '<div class="podname rvel" id="podname' + place + '">' + esc(entry.g.nome) + '</div>' +
+      '<div class="podbox p' + place + ' rvel" id="podbox' + place + '" style="height:' + h + 'px;">' +
+        '<div class="podmedal">' + entry.pos + '\u00BA</div>' +
+        '<div class="podpts">' + entry.g.pontos + '</div>' +
+      '</div></div>';
+  }
+  podio.innerHTML = podBox(ord[1], 2, 120) + podBox(ord[0], 1, 180) + podBox(ord[2], 3, 95);
+
+  var cont = document.getElementById("resultadoLista");
+  var html = "";
+  for (var i = 0; i < ord.length; i++){
+    var g = ord[i].g, p = ord[i].pos;
+    var cls = "grow" + (p === 1 ? " r1" : (p === 2 ? " r2" : (p === 3 ? " r3" : "")));
+    html += '<div class="' + cls + '">' +
+      '<div class="gpos">' + p + '\u00BA</div>' +
+      '<div class="gnome">' + esc(g.nome) + '</div>' +
+      '<div class="gpts">' + g.pontos + '</div>' +
+      '</div>';
+  }
+  if (!ord.length) html = '<div class="empty">Nenhum grupo cadastrado.</div>';
+  cont.className = "glista fade";
+  cont.innerHTML = html;
+
+  var msg = document.getElementById("msgFinal");
+  if (ord.length){
+    var top = ord[0].g.pontos, emp = [];
+    for (var j = 0; j < ord.length; j++) if (ord[j].g.pontos === top) emp.push(ord[j].g.nome);
+    if (emp.length > 1) msg.innerHTML = "Parab\u00E9ns aos vencedores: <b>" + esc(emp.join(", ")) + "</b>!";
+    else msg.innerHTML = "Parab\u00E9ns ao grupo <b>" + esc(ord[0].g.nome) + "</b>, campe\u00E3o com " + top + " pontos!";
+  } else msg.innerHTML = "";
+  msg.className = "msg fade";
+}
+
+var revealTimers = [];
+function clearReveal(){
+  for (var i = 0; i < revealTimers.length; i++) clearTimeout(revealTimers[i]);
+  revealTimers = [];
+}
+function revealAt(ms, fn){ revealTimers.push(setTimeout(fn, ms)); }
+
+function setRevealed(place){
+  var n = document.getElementById("podname" + place);
+  var b = document.getElementById("podbox" + place);
+  if (n) n.className = "podname rvel in";
+  if (b) b.className = "podbox p" + place + " rvel in";
+}
+
+function revelarPodio(){
+  clearReveal();
+  var rm = document.getElementById("revealMsg");
+  if (rm) rm.innerHTML = "&nbsp;";
+  revealAt(450, function(){
+    if (rm) rm.innerHTML = "3\u00BA LUGAR";
+    setRevealed("3");
+  });
+  revealAt(1500, function(){
+    if (rm) rm.innerHTML = "2\u00BA LUGAR";
+    setRevealed("2");
+  });
+  revealAt(2550, function(){
+    if (rm) rm.innerHTML = "CAMPE\u00C3O!";
+    setRevealed("1");
+  });
+  revealAt(3100, function(){
+    var b = document.getElementById("podbox1");
+    if (b) b.className = "podbox p1 rvel in champ";
+  });
+  revealAt(3600, function(){
+    if (rm) rm.innerHTML = "CLASSIFICA\u00C7\u00C3O FINAL";
+    var list = document.getElementById("resultadoLista");
+    if (list) list.className = "glista fade in";
+    var msg = document.getElementById("msgFinal");
+    if (msg) msg.className = "msg fade in";
+  });
+}
+
+function replayReveal(){
+  stop();
+  loadGrupos();
+  if (grupos.length < 1) return;
+  clearReveal();
+  renderResults();
+  show("scr-results");
+  revelarPodio();
+}
+
+function createShortcut(force){
+  try {
+    var sh = new ActiveXObject("WScript.Shell");
+    var lnk = sh.SpecialFolders("Desktop") + "\\CampeANATO Sorteador.lnk";
+    if (fso.FileExists(lnk) && !force) return "existe";
+    var hta = base + "\\Sorteador.hta";
+    var s = sh.CreateShortcut(lnk);
+    s.TargetPath = sh.ExpandEnvironmentStrings("%SystemRoot%\\System32\\mshta.exe");
+    s.Arguments = '"' + hta + '"';
+    s.WorkingDirectory = base;
+    s.Description = "Sorteador CampeANATO";
+    s.WindowStyle = 3;
+    s.Save();
+    return "criado";
+  } catch (e) { return "erro"; }
+}
+
+function init(){
+  base = deriveBase();
+
+  var p = loadPos();
+  if (p && p.w > 200 && p.h > 150){
+    try { window.moveTo(p.x, p.y); window.resizeTo(p.w, p.h); } catch (e) {}
+  } else {
+    try { window.moveTo(0, 0); window.resizeTo(screen.availWidth, screen.availHeight); } catch (e) {}
+  }
+
+  TIPOS = listImages(findFolder(["TOPICOS", "TIPOS", "TOPIC", "TEMAS"]));
+  NUMEROS = listImages(findFolder(["NUMEROS", "NUMERO", "N\u00DAMEROS"]));
+  FUNDO = listImages(findFolder(["FUNDO", "FUNDOS", "BACKGROUND"]));
+  if (FUNDO.length) document.body.style.backgroundImage = "url('" + FUNDO[0].src + "')";
+  nomes = loadNames(TIPOS.length);
+  readProgress();
+  buildRemaining();
+  loadGrupos();
+
+  createShortcut(false);
+  setSom(loadSom());
+
+  document.getElementById("hud").onclick = function(){ stop(); };
+  document.getElementById("btnSair").onclick = function(){ stop(); window.close(); };
+  document.getElementById("btnReset").onclick = function(){ stop(); resetAll(true); };
+  document.getElementById("btnAtalho").onclick = function(){
+    stop();
+    var r = createShortcut(true);
+    if (r == "criado") alert("Atalho criado na \u00C1rea de Trabalho!");
+    else if (r == "existe") alert("O atalho j\u00E1 existe na \u00C1rea de Trabalho.");
+    else alert("N\u00E3o foi poss\u00EDvel criar o atalho.");
+  };
+  document.getElementById("btnSom").onclick = function(){ stop(); setSom(!loadSom()); };
+  document.getElementById("btnSortear").onclick = function(){ stop(); startSpin(); };
+  document.getElementById("btnFinalizar").onclick = function(){ stop(); finalizar(); };
+  document.getElementById("btnPainel").onclick = function(){ stop(); launchPanel(); };
+
+  if (TIPOS.length == 0 || NUMEROS.length == 0){
+    document.getElementById("configMsg").innerHTML =
+      "Coloque as imagens dos <b>temas</b> na pasta <b>TOPICOS</b> e as imagens dos " +
+      "<b>n\u00FAmeros</b> na pasta <b>NUMEROS</b>.<br><br>" +
+      "Encontrado agora &rarr; TOPICOS: " + TIPOS.length + " imagem(ns) &nbsp;|&nbsp; " +
+      "NUMEROS: " + NUMEROS.length + " imagem(ns).";
+    show("scr-config");
+    return;
+  }
+
+  reels.tema.el = document.getElementById("reelTema");
+  reels.tema.strip = document.getElementById("stripTema");
+  reels.num.el = document.getElementById("reelNum");
+  reels.num.strip = document.getElementById("stripNum");
+  buildReel(reels.tema, TIPOS);
+  buildReel(reels.num, NUMEROS);
+
+  show("scr-board");
+  updateCount();
+
+  document.onclick = function(){
+    if (currentScreen != "board") return;
+    startSpin();
+  };
+
+  document.onkeydown = function(){
+    var k = window.event.keyCode;
+    if (k == 122){ toggleFull(); return false; }
+    if (k == 121){ toggleClean(); return false; }
+    if (k == 27){
+      if (isFull){ exitFull(); }
+      else if (hudHidden){ setHud(false); }
+      else { window.close(); }
+      return false;
+    }
+    if ((k == 32 || k == 13) && currentScreen == "board"){ startSpin(); return false; }
+    return true;
+  };
+
+  var bc = readCmd();
+  lastCmdT = bc ? bc.t : 0;
+  launchPanel();
+  setInterval(pollCmd, 350);
+  setInterval(function(){ if (!isFull) savePos(); }, 2500);
+  setInterval(function(){ var m = loadSom(); if (m !== somMudo) setSom(m); }, 2000);
+
+  window.onresize = function(){
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layoutReels, 300);
+  };
+  setTimeout(layoutReels, 150);
+}
+
+init();
+</script>
+</body>
+</html>

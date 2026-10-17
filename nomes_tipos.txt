@@ -1,0 +1,20 @@
+# Nomes dos temas, um por linha, NA ORDEM das imagens da pasta TOPICOS.
+# Ex.: se a 1a imagem e "cardiovascular", a 1a linha e Cardiovascular.
+#
+# Se preferir, NAO use este arquivo: basta nomear os arquivos da pasta TOPICOS
+# com o nome do tema (ex.: "Sistema Vascular.png") que o app mostra o nome sozinho.
+# Os nomes dos arquivos atuais (cardiovascular, Nervoso, etc.) ja viram a legenda.
+#
+# Linhas que comecam com # sao ignoradas. Edite os exemplos abaixo e remova o #.
+#
+# Sistema Vascular
+# Sistema Nervoso
+# Sistema Respiratorio
+# Sistema Digestorio
+# Sistema Urinario
+# Sistema Endocrino
+# Sistema Reprodutor
+# Sistema Linfatico
+# Sistema Esqueletico
+# Sistema Muscular
+

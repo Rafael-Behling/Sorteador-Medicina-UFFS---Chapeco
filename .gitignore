@@ -1,0 +1,16 @@
+comando.txt
+nomes_tipos.txt
+progresso.txt
+ranking.txt
+_pos_painel.txt
+_pos_sorteador.txt
+_som_mudo.txt
+*.log
+_erros.log
+_painel.lock
+*.tmp
+*.bak
+~*
+Thumbs.db
+Desktop.ini
+
